@@ -1,0 +1,2 @@
+-- GORM AutoMigrate creates the initial schema at startup. This file documents the managed migration boundary.
+-- Tables: categories, products, suppliers, offers, price_histories, favorites, price_alerts, budgets.

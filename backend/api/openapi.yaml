@@ -1,0 +1,23 @@
+openapi: 3.0.3
+info:
+  title: 筑价建材比价 API
+  version: 1.0.0
+paths:
+  /healthz:
+    get:
+      responses: {'200': {description: 服务健康}}
+  /api/v1/products:
+    get:
+      summary: 搜索、分类和排序建材
+      responses: {'200': {description: 成功}}
+  /api/v1/products/compare:
+    post:
+      summary: 批量比较建材
+      responses: {'200': {description: 成功}}
+  /api/v1/favorites:
+    get: {summary: 获取收藏}
+    post: {summary: 添加收藏}
+  /api/v1/alerts:
+    post: {summary: 创建价格预警}
+  /api/v1/budgets:
+    post: {summary: 保存装修预算}

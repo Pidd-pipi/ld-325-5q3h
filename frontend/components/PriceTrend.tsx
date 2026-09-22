@@ -1,0 +1,6 @@
+'use client';
+import { useEffect, useRef } from 'react';
+import * as echarts from 'echarts';
+import type { Trend } from '@/lib/types';
+import { cnDate } from '@/lib/utils';
+export function PriceTrend({ trend }: { trend: Trend | null }) { const target = useRef<HTMLDivElement>(null); useEffect(() => { if (!target.current || !trend) return; const chart = echarts.init(target.current); chart.setOption({ grid: { left: 6, right: 8, top: 18, bottom: 4, containLabel: true }, tooltip: { trigger: 'axis', valueFormatter: (value: string | number) => `¥${value}` }, xAxis: { type: 'category', data: trend.points.map((point) => cnDate(point.RecordedAt)), axisLine: { lineStyle: { color: '#d6d0c4' } }, axisLabel: { color: '#716a5d', fontSize: 10 } }, yAxis: { type: 'value', splitLine: { lineStyle: { color: '#e9e2d5' } }, axisLabel: { color: '#716a5d', fontSize: 10, formatter: '¥{value}' } }, series: [{ data: trend.points.map((point) => point.Price), type: 'line', smooth: 0.32, symbol: 'none', lineStyle: { color: '#a94f36', width: 3 }, areaStyle: { color: 'rgba(169,79,54,.12)' } }] }); const observer = new ResizeObserver(() => chart.resize()); observer.observe(target.current); return () => { observer.disconnect(); chart.dispose(); }; }, [trend]); return <div ref={target} className="trend-chart" aria-label="30 天价格趋势图" />; }

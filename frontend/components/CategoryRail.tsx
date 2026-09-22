@@ -1,0 +1,2 @@
+const categories = ['全部', '瓷砖', '地板', '涂料', '卫浴', '五金', '门窗', '灯具', '管材'];
+export function CategoryRail({ selected, onSelected }: {selected: string; onSelected(value: string): void}) { return <div className="category-rail" role="tablist">{categories.map((category) => <button key={category} role="tab" aria-selected={selected === category} onClick={() => onSelected(category)}>{category}</button>)}</div>; }

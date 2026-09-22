@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.next/
+out/
+.env
+.DS_Store
+*.log
+.idea/
+.vscode/
+bin/
+backend/server
+*.exe
+*.test
+coverage.out
+coverage/
