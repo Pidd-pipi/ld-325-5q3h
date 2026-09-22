@@ -1,4 +1,29 @@
-import type { ApiEnvelope, Product, Trend } from './types';
+import type { ApiEnvelope, Product, PurchaseOrderResult, Trend } from './types';
 const API_ROOT = '/api/v1';
-async function request<T>(path: string, init?: RequestInit): Promise<T> { const response = await fetch(`${API_ROOT}${path}`, { headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) }, ...init }); const payload = await response.json() as ApiEnvelope<T>; if (!response.ok || payload.code !== 0) throw new Error(payload.message); return payload.data; }
-export const api = { listProducts: (q = '') => request<{items: Product[]; total: number}>(`/products?sort=rating&q=${encodeURIComponent(q)}`), trend: (id: number, range = '30d') => request<Trend>(`/products/${id}/trend?range=${range}`), compare: (ids: number[]) => request<Product[]>('/products/compare', { method: 'POST', body: JSON.stringify({ ids }) }), favorite: (productId: number) => request('/favorites', { method: 'POST', body: JSON.stringify({ product_id: productId, folder: '本周采购' }) }), alert: (productId: number, target: number) => request('/alerts', { method: 'POST', body: JSON.stringify({ product_id: productId, target_price: target, drop_percent: 10 }) }), budget: (room: string, area: number) => request<{Estimate: number; Payload: string}>('/budgets', { method: 'POST', body: JSON.stringify({ room_type: room, area }) }) };
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_ROOT}${path}`, { headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) }, ...init });
+  const payload = await response.json() as ApiEnvelope<T>;
+  if (!response.ok || payload.code !== 0) throw new Error(payload.message);
+  return payload.data;
+}
+
+// requestResult always resolves with the envelope so callers can render both
+// the success payload and a business rejection (e.g. 409 整单拒绝) uniformly.
+async function requestResult<T>(path: string, init?: RequestInit): Promise<{ ok: boolean; httpStatus: number; data?: T; message: string; code: number }> {
+  const response = await fetch(`${API_ROOT}${path}`, { headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) }, ...init });
+  const payload = await response.json() as ApiEnvelope<T>;
+  return { ok: response.ok && payload.code === 0, httpStatus: response.status, data: payload.data, message: payload.message, code: payload.code };
+}
+
+export const api = {
+  listProducts: (q = '') => request<{ items: Product[]; total: number }>(`/products?sort=rating&q=${encodeURIComponent(q)}`),
+  trend: (id: number, range = '30d') => request<Trend>(`/products/${id}/trend?range=${range}`),
+  compare: (ids: number[]) => request<Product[]>('/products/compare', { method: 'POST', body: JSON.stringify({ ids }) }),
+  favorite: (productId: number) => request('/favorites', { method: 'POST', body: JSON.stringify({ product_id: productId, folder: '本周采购' }) }),
+  alert: (productId: number, target: number) => request('/alerts', { method: 'POST', body: JSON.stringify({ product_id: productId, target_price: target, drop_percent: 10 }) }),
+  budget: (room: string, area: number) => request<{ Estimate: number; Payload: string }>('/budgets', { method: 'POST', body: JSON.stringify({ room_type: room, area }) }),
+  createPurchaseOrder: (productId: number, totalQuantity: number, idempotencyKey: string) =>
+    requestResult<PurchaseOrderResult>('/purchase-orders', { method: 'POST', body: JSON.stringify({ product_id: productId, total_quantity: totalQuantity, idempotency_key: idempotencyKey }) }),
+  getPurchaseOrder: (id: number) => request<PurchaseOrderResult>(`/purchase-orders/${id}`),
+};

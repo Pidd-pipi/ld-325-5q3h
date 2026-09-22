@@ -8,6 +8,9 @@ import (
 )
 
 func Seed(db *gorm.DB) error {
+	if err := backfillOfferStock(db); err != nil {
+		return err
+	}
 	var count int64
 	if err := db.Model(&Product{}).Count(&count).Error; err != nil {
 		return fmt.Errorf("count seed products: %w", err)
@@ -30,7 +33,7 @@ func Seed(db *gorm.DB) error {
 	if err := db.Create(&products).Error; err != nil {
 		return fmt.Errorf("seed products: %w", err)
 	}
-	offers := []Offer{{ProductID: products[0].ID, SupplierID: suppliers[0].ID, UnitPrice: 398, MOQ: 10, Freight: "满 30 片送货上门", DeliveryDays: 3, StockStatus: constants.StatusInStock}, {ProductID: products[0].ID, SupplierID: suppliers[1].ID, UnitPrice: 412, MOQ: 5, Freight: "同城配送 80 元", DeliveryDays: 2, StockStatus: constants.StatusInStock}, {ProductID: products[1].ID, SupplierID: suppliers[1].ID, UnitPrice: 188, MOQ: 20, Freight: "满 100 ㎡免运费", DeliveryDays: 5, StockStatus: constants.StatusInStock}, {ProductID: products[1].ID, SupplierID: suppliers[0].ID, UnitPrice: 205, MOQ: 10, Freight: "物流到楼下", DeliveryDays: 4, StockStatus: constants.StatusOutOfStock}, {ProductID: products[2].ID, SupplierID: suppliers[0].ID, UnitPrice: 538, MOQ: 2, Freight: "满 6 桶免运费", DeliveryDays: 2, StockStatus: constants.StatusInStock}, {ProductID: products[3].ID, SupplierID: suppliers[2].ID, UnitPrice: 1299, MOQ: 1, Freight: "包邮入户", DeliveryDays: 7, StockStatus: constants.StatusInStock}, {ProductID: products[4].ID, SupplierID: suppliers[0].ID, UnitPrice: 79, MOQ: 5, Freight: "满 500 元包邮", DeliveryDays: 2, StockStatus: constants.StatusInStock}, {ProductID: products[5].ID, SupplierID: suppliers[1].ID, UnitPrice: 680, MOQ: 8, Freight: "测量后报价", DeliveryDays: 12, StockStatus: constants.StatusInStock}}
+	offers := []Offer{{ProductID: products[0].ID, SupplierID: suppliers[0].ID, UnitPrice: 398, MOQ: 10, Freight: "满 30 片送货上门", DeliveryDays: 3, StockStatus: constants.StatusInStock, AvailableStock: 60}, {ProductID: products[0].ID, SupplierID: suppliers[1].ID, UnitPrice: 412, MOQ: 5, Freight: "同城配送 80 元", DeliveryDays: 2, StockStatus: constants.StatusInStock, AvailableStock: 30}, {ProductID: products[1].ID, SupplierID: suppliers[1].ID, UnitPrice: 188, MOQ: 20, Freight: "满 100 ㎡免运费", DeliveryDays: 5, StockStatus: constants.StatusInStock, AvailableStock: 200}, {ProductID: products[1].ID, SupplierID: suppliers[0].ID, UnitPrice: 205, MOQ: 10, Freight: "物流到楼下", DeliveryDays: 4, StockStatus: constants.StatusOutOfStock, AvailableStock: 150}, {ProductID: products[2].ID, SupplierID: suppliers[0].ID, UnitPrice: 538, MOQ: 2, Freight: "满 6 桶免运费", DeliveryDays: 2, StockStatus: constants.StatusInStock, AvailableStock: 40}, {ProductID: products[3].ID, SupplierID: suppliers[2].ID, UnitPrice: 1299, MOQ: 1, Freight: "包邮入户", DeliveryDays: 7, StockStatus: constants.StatusInStock, AvailableStock: 25}, {ProductID: products[4].ID, SupplierID: suppliers[0].ID, UnitPrice: 79, MOQ: 5, Freight: "满 500 元包邮", DeliveryDays: 2, StockStatus: constants.StatusInStock, AvailableStock: 200}, {ProductID: products[5].ID, SupplierID: suppliers[1].ID, UnitPrice: 680, MOQ: 8, Freight: "测量后报价", DeliveryDays: 12, StockStatus: constants.StatusInStock, AvailableStock: 50}}
 	if err := db.Create(&offers).Error; err != nil {
 		return fmt.Errorf("seed offers: %w", err)
 	}
@@ -46,4 +49,18 @@ func Seed(db *gorm.DB) error {
 		}
 	}
 	return nil
+}
+
+// backfillOfferStock gives pre-existing offers a default available quantity
+// after AvailableStock was introduced; it runs only against zero-stock rows.
+func backfillOfferStock(db *gorm.DB) error {
+	defaultStock := 100
+	return db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&Offer{}).
+			Where("available_stock = 0 AND stock_status = ?", constants.StatusInStock).
+			Update("available_stock", defaultStock).Error; err != nil {
+			return fmt.Errorf("backfill offer stock: %w", err)
+		}
+		return nil
+	})
 }

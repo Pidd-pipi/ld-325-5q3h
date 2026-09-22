@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: 筑价建材比价 API
-  version: 1.0.0
+  version: 1.1.0
 paths:
   /healthz:
     get:
@@ -21,3 +21,62 @@ paths:
     post: {summary: 创建价格预警}
   /api/v1/budgets:
     post: {summary: 保存装修预算}
+  /api/v1/purchase-orders:
+    post:
+      summary: 建材采购拆单（只在已审核商家的有货报价间分配；总量不足整单拒绝；幂等键重复返回原结果）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [product_id, total_quantity, idempotency_key]
+              properties:
+                product_id: {type: integer, minimum: 1}
+                total_quantity: {type: integer, minimum: 1, description: 商品需求总量}
+                idempotency_key: {type: string, minLength: 8, maxLength: 64}
+      responses:
+        '200':
+          description: 拆单成功，采购单与库存占用一起生效
+        '409':
+          description: 整单拒绝（无可分配报价/满足起订量后总量不足/并发占用），响应体 data 为已落库的 failed 采购单
+  /api/v1/purchase-orders/{id}:
+    get:
+      summary: 采购单详情（分配明细、交期、失败原因，刷新后可回读）
+      parameters:
+        - {in: path, name: id, required: true, schema: {type: integer}}
+      responses:
+        '200': {description: 成功}
+        '404': {description: 采购单不存在或不属于当前用户}
+components:
+  schemas:
+    PurchaseOrderResult:
+      type: object
+      properties:
+        id: {type: integer}
+        product_id: {type: integer}
+        product_name: {type: string}
+        product_unit: {type: string}
+        total_quantity: {type: integer}
+        status: {type: string, enum: [succeeded, failed]}
+        total_amount: {type: number}
+        max_delivery_days: {type: integer}
+        failure_code: {type: string}
+        failure_reason: {type: string}
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              offer_id: {type: integer}
+              supplier_id: {type: integer}
+              supplier_name: {type: string}
+              unit_price: {type: number}
+              quantity: {type: integer}
+              moq: {type: integer}
+              available_before: {type: integer}
+              available_after: {type: integer}
+              delivery_days: {type: integer}
+              freight: {type: string}
+              line_amount: {type: number}
+        created_at: {type: string}

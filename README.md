@@ -42,6 +42,7 @@ docker compose down
 - **价格趋势**：读取报价历史，展示 30/90 天或 1 年区间的最高、最低和平均价；前端以 ECharts 绘制 30 天图表。
 - **价格预警**：按目标价和降幅百分比创建订阅，演示环境使用 `demo-user` 身份写入站内预警记录。
 - **供应商管理**：供应商资质和审核状态可查询；管理员审核、供应商库存状态更新接口已保留。
+- **采购拆单闭环**：按商品总量下单，仅在已审核商家的有货报价间分配（满足起订量、不超过可供量、低价优先、单商家不足自动拆分）；数量变化或并发占用导致总量不足时**整单拒绝**，采购单、明细与剩余量均不变；成功后采购单与库存占用在同一事务中生效，`idempotency_key` 重复提交返回原结果；详情展示分配、交期与失败原因，刷新后可回读。
 - **装修预算**：按客厅、厨房、卫生间和面积基于市场均价试算，结果可保存，前端提供导出入口。
 
 ## 本地开发（备选）
@@ -104,6 +105,8 @@ npm run dev -- -p 18625
 | GET/POST | `/api/v1/favorites` | 收藏列表 / 添加收藏 |
 | POST | `/api/v1/alerts` | 创建价格预警 |
 | POST | `/api/v1/budgets` | 保存预算试算 |
+| POST | `/api/v1/purchase-orders` | 采购拆单：body `{"product_id":1,"total_quantity":70,"idempotency_key":"..."}`；不足返回 409（body 内含已落库 failed 单） |
+| GET | `/api/v1/purchase-orders/:id` | 采购单详情：分配明细、交期、失败原因（刷新可回读） |
 | GET | `/api/v1/suppliers` | 查询供应商 |
 | PATCH | `/api/v1/admin/suppliers/:id/status` | 审核供应商（admin 角色） |
 | PATCH | `/api/v1/supplier/offers/:id/status` | 更新报价库存状态（supplier/admin 角色） |
