@@ -12,4 +12,5 @@ type Offer struct {
 	Freight      string
 	DeliveryDays int
 	StockStatus  string
+	AvailableQty int
 }

@@ -62,7 +62,7 @@ export function InsightPanel({ product, trend, range, onRange, onAlert }: Insigh
       </div>
       <div className="offer-table">
         <div className="offer-title"><b>商家报价</b><span><Info size={14} /> 当前最低价已标注</span></div>
-        {offers.map((offer) => <div className={offer.UnitPrice === low ? 'offer lowest' : 'offer'} key={offer.ID}><b>{offer.Supplier.Name}</b><span>{offer.DeliveryDays} 天交货 · 起订 {offer.MOQ} {product.Unit}</span><span>{offer.StockStatus === 'in_stock' ? '有货' : '库存紧张'}</span><strong>{money(offer.UnitPrice)}</strong></div>)}
+        {offers.map((offer) => <div className={offer.UnitPrice === low ? 'offer lowest' : 'offer'} key={offer.ID}><b>{offer.Supplier.Name}</b><span>{offer.DeliveryDays} 天交货 · 起订 {offer.MOQ} {product.Unit} · 可供 {offer.AvailableQty}</span><span>{offer.StockStatus === 'in_stock' ? '有货' : '库存紧张'}</span><strong>{money(offer.UnitPrice)}</strong></div>)}
       </div>
       <button className="export"><Download size={15} />导出该材料报价单</button>
     </section>

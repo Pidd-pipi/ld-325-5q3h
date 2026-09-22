@@ -6,6 +6,8 @@ var (
 	ErrNotFound     = errors.New("resource not found")
 	ErrInvalidInput = errors.New("invalid request input")
 	ErrUnauthorized = errors.New("unauthorized")
+	ErrDuplicateKey = errors.New("duplicate idempotency key")
+	ErrStockChanged = errors.New("offer stock changed concurrently")
 )
 
 type BusinessError struct {

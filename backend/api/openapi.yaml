@@ -21,3 +21,22 @@ paths:
     post: {summary: 创建价格预警}
   /api/v1/budgets:
     post: {summary: 保存装修预算}
+  /api/v1/purchase-orders:
+    get: {summary: 当前用户的采购单列表}
+    post:
+      summary: 创建采购单（按总量在已审核商家的有货报价间拆单）
+      description: 幂等键重复提交返回原结果；总量不足时整单拒绝，库存不变
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [product_id, quantity, idempotency_key]
+              properties:
+                product_id: {type: integer}
+                quantity: {type: integer, minimum: 1}
+                idempotency_key: {type: string, minLength: 8, maxLength: 64}
+      responses: {'200': {description: 采购单详情，含分配明细、交期或失败原因}}
+  /api/v1/purchase-orders/{id}:
+    get: {summary: 采购单详情（分配、交期、失败原因）}
